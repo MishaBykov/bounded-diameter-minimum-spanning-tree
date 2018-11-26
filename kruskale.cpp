@@ -17,7 +17,7 @@ int dist(pair<int, int>& v1, pair<int, int>& v2)
     return abs(v1.first - v2.first) + abs(v1.second - v2.second);
 }
 
-int bfs(int ind_v, vector< vector<int>>& vvs)
+int double_bfs(int ind_v, vector< vector<int>>& vvs)
 {
     static bool run = false;
 
@@ -50,7 +50,19 @@ int bfs(int ind_v, vector< vector<int>>& vvs)
         return v_order_max.second;
     }
     run = true;
-    return bfs(v_order_max.first, vvs);
+    return double_bfs(v_order_max.first, vvs);
+}
+
+int diam(vector< pair<int, pair<int, int>>> edges, vector<int>& ost, unsigned long n)
+{
+    vector< vector<int>> vvs; // вершина - вершины
+    vvs.resize(n);
+    for(auto i : ost)
+    {
+        vvs[edges[i].second.first].push_back(edges[i].second.second);
+        vvs[edges[i].second.second].push_back(edges[i].second.first);
+    }
+    return double_bfs(0, vvs);
 }
 
 //  обращаться к текущему
@@ -73,10 +85,14 @@ void dsu_unite (int a, int b) {
     }
 }
 
+void dsu_pop_back()
+{
+    p.pop_back();
+}
+
 int main()
 {
-    unsigned long n;
-    unsigned long m;
+    unsigned long n, m, d;
     vector< pair<int, pair<int, int>>> g; // вес - вершина 1 - вершина 2
     vector< vector<int>> vvs; // вершина - вершины
     vector< pair<int, int>> v;
@@ -85,7 +101,7 @@ int main()
     file.open("../input/Taxicab_100.txt");
 
 //    ... чтение графа ...
-    file >> n;
+    file >> n >> d;
 
     for(int i = 0; i < n; i++)
     {
@@ -102,58 +118,48 @@ int main()
 
     m = g.size();
     int cost = 0;
-    vector < pair<int, int> > res;
+    vector<int> res;
 
     sort(g.begin(), g.end());
     p.resize(n);
     for (int i=0; i<n; ++i)
         p.back()[i] = i;
-//      перебор ребер
-//      массив
-// нашел т-1 ребро все хорошо
-// не нашел найти следующее
-//      ребро + номер(со следующего искать)
-// на шаге
-//  финал
-//      (попали в диаметр)
-//      не попали
-//          выкинули последнее,
-//  новое ребро
-//      получилось
-//      не получилось
 
     int i = 0;
-    while(res.size() != n-1)
+    while(true)
     {
-        int a = g[i].second.first,  b = g[i].second.second,  c = g[i].first;
-        if (dsu_get(a) != dsu_get(b)) {
-            cost += c;
-            res.push_back (g[i].second);
-            dsu_unite (a, b);
-        }
-        else
+        if(i == g.size())
         {
-
+            cost -= g[res.back()].first;
+            i = res.back() + 1;
+            res.pop_back();
+            dsu_pop_back();
         }
-    }
-
-    for (int i=0; i<m; ++i) {
         int a = g[i].second.first,  b = g[i].second.second,  c = g[i].first;
-        if (dsu_get(a) != dsu_get(b)) {
+        if (dsu_get(a) != dsu_get(b))
+        {
             cost += c;
-            res.push_back (g[i].second);
+            res.push_back(i);
             dsu_unite (a, b);
+            if(res.size() == n-1)
+            {
+                if(diam(g, res, n) <= d )
+                    break;
+                else
+                {
+                    cost -= c;
+                    i = res.back();
+                    res.pop_back();
+                    dsu_pop_back();
+                }
+            }
         }
+        i++;
     }
 
-    vvs.resize(n);
-    for(auto i : res)
-    {
-        vvs[i.first].push_back(i.second);
-        vvs[i.second].push_back(i.first);
+    for(int i = 0; i < res.size(); i++){
+        cout << g[i].second.first << ' ' << g[i].second.second << endl;
     }
-
-    cout << bfs(0, vvs);
 
     return 0;
 }
