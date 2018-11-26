@@ -97,16 +97,17 @@ int main()
     vector< vector<int>> vvs; // вершина - вершины
     vector< pair<int, int>> v;
 
-    fstream file;
-    file.open("../input/Taxicab_100.txt");
+    fstream in, out;
+    out.open("../out.txt");
+    in.open("../input/input.txt");
 
 //    ... чтение графа ...
-    file >> n >> d;
+    in >> n >> d;
 
     for(int i = 0; i < n; i++)
     {
         v.emplace_back();
-        file >> v.back().first >> v.back().second;
+        in >> v.back().first >> v.back().second;
         for(int j = i-1; j >= 0; j--)
         {
             g.emplace_back();
@@ -121,7 +122,8 @@ int main()
     vector<int> res;
 
     sort(g.begin(), g.end());
-    p.resize(n);
+    p.emplace_back();
+    p.back().resize(n);
     for (int i=0; i<n; ++i)
         p.back()[i] = i;
 
@@ -130,10 +132,13 @@ int main()
     {
         if(i == g.size())
         {
+            if(res.empty())
+                break;
             cost -= g[res.back()].first;
             i = res.back() + 1;
             res.pop_back();
             dsu_pop_back();
+            continue;
         }
         int a = g[i].second.first,  b = g[i].second.second,  c = g[i].first;
         if (dsu_get(a) != dsu_get(b))
@@ -143,7 +148,13 @@ int main()
             dsu_unite (a, b);
             if(res.size() == n-1)
             {
-                if(diam(g, res, n) <= d )
+                int dim = diam(g, res, n);
+                out << dim << endl;
+                for(int j = 0; j < res.size(); j++){
+                    out << g[j].second.first << ' ' << g[j].second.second << endl;
+                }
+                out << "-----------------------" << endl;
+                if(dim <= d )
                     break;
                 else
                 {
