@@ -97,9 +97,8 @@ int main()
     vector< vector<int>> vvs; // вершина - вершины
     vector< pair<int, int>> v;
 
-    fstream in, out;
-    out.open("../out.txt");
-    in.open("../input/input.txt");
+    fstream in;
+    in.open("../input/Taxicab_100.txt");
 
 //    ... чтение графа ...
     in >> n >> d;
@@ -116,6 +115,7 @@ int main()
             g.back().second.second = j;
         }
     }
+    in.close();
 
     m = g.size();
     int cost = 0;
@@ -128,6 +128,7 @@ int main()
         p.back()[i] = i;
 
     int i = 0;
+    int j = 0;
     while(true)
     {
         if(i == g.size())
@@ -148,12 +149,12 @@ int main()
             dsu_unite (a, b);
             if(res.size() == n-1)
             {
+                j++;
                 int dim = diam(g, res, n);
-                out << dim << endl;
-                for(int j = 0; j < res.size(); j++){
-                    out << g[j].second.first << ' ' << g[j].second.second << endl;
+                if (j % 50000 == 0) {
+                    cout << dim << endl;
+                    j = 0;
                 }
-                out << "-----------------------" << endl;
                 if(dim <= d )
                     break;
                 else
@@ -168,8 +169,14 @@ int main()
         i++;
     }
 
+    fstream result;
+    result.open("../result_100.txt");
+    result << "c Вес дерева = " << cost << ", диаметр = " << d << ',' << endl;
+    result << "c число вершин и ребер" << endl;
+    result << "p edge " << n << ' ' << res.size() << endl;
+    result << "c ребера" << endl;
     for(int i = 0; i < res.size(); i++){
-        cout << g[i].second.first << ' ' << g[i].second.second << endl;
+        result << "e " << g[i].second.first << ' ' << g[i].second.second << endl;
     }
 
     return 0;
