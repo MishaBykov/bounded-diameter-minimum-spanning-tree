@@ -118,11 +118,24 @@ int main()
 //      (попали в диаметр)
 //      не попали
 //          выкинули последнее,
-
 //  новое ребро
 //      получилось
 //      не получилось
 
+    int i = 0;
+    while(res.size() != n-1)
+    {
+        int a = g[i].second.first,  b = g[i].second.second,  c = g[i].first;
+        if (dsu_get(a) != dsu_get(b)) {
+            cost += c;
+            res.push_back (g[i].second);
+            dsu_unite (a, b);
+        }
+        else
+        {
+
+        }
+    }
 
     for (int i=0; i<m; ++i) {
         int a = g[i].second.first,  b = g[i].second.second,  c = g[i].first;
