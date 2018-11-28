@@ -65,118 +65,92 @@ int diam(vector< pair<int, pair<int, int>>> edges, vector<int>& ost, unsigned lo
     return double_bfs(0, vvs);
 }
 
-//  обращаться к текущему
-int dsu_get (int v) {
-    return (v == p.back()[v]) ? v : (p.back()[v] = dsu_get(p.back()[v]));
-}
-
-void dsu_unite (int a, int b) {
-    a = dsu_get (a);
-    b = dsu_get (b);
-    if (rand() & 1)
-        swap (a, b);
-//    перед p[a] добавить новую строку vector
-//    указатель на текущий
-    if (a != b)
-    {
-        p.emplace_back();
-        p.back() = p[p.size() - 2];
-        p.back()[a] = b;
-    }
-}
-
-void dsu_pop_back()
-{
-    p.pop_back();
-}
-
 int main()
 {
-    unsigned long n, m, d;
-    vector< pair<int, pair<int, int>>> g; // вес - вершина 1 - вершина 2
-    vector< vector<int>> vvs; // вершина - вершины
+    unsigned long n, d;
     vector< pair<int, int>> v;
 
     fstream in;
     in.open("../input/Taxicab_100.txt");
 
+    pair<int, int> p_min;
+    pair<int, int> p_max;
+
 //    ... чтение графа ...
     in >> n >> d;
+    v.emplace_back();
+    in >> v.back().first >> v.back().second;
+    p_min.first = v.back().first;
+    p_min.second = v.back().second;
+    p_max.first = v.back().first;
+    p_max.second = v.back().second;
 
-    for(int i = 0; i < n; i++)
-    {
+    for(int i = 1; i < n; i++) {
         v.emplace_back();
         in >> v.back().first >> v.back().second;
-        for(int j = i-1; j >= 0; j--)
-        {
-            g.emplace_back();
-            g.back().first = dist(v[i], v[j]);
-            g.back().second.first = i;
-            g.back().second.second = j;
+        if(v.back().first > p_max.first)
+            p_max.first = v.back().first;
+        if(v.back().second > p_max.second)
+            p_max.second = v.back().second;
+        if(p_min.first > v.back().first)
+            p_min.first = v.back().first;
+        if(p_min.second > v.back().second)
+            p_min.second = v.back().second;
+    }
+
+    pair<int, int> p_center((p_max.first+p_min.first)/2, (p_max.second+p_min.second)/2);
+    int r = dist(p_center, p_max)/2;
+    int v_center = 0;
+    for(int i = 1; i < v.size(); i++){
+       if(dist(v[i], p_center) < dist(v[v_center], p_center))
+           v_center = i;
+    }
+
+    vector<bool> v_in_r(v.size(), false);
+    v_in_r[v_center] = true;
+    vector<pair<int, pair<int, int>>> result_cost_v_v;
+
+    for(int i = 0; i < v.size(); i++){
+        if(dist(v[v_center], v[i]) <= r && i != v_center){
+            v_in_r[i] = true;
+            result_cost_v_v.emplace_back();
+            result_cost_v_v.back().first = dist(v[v_center], v[i]);
+            result_cost_v_v.back().second.first = v_center;
+            result_cost_v_v.back().second.second = i;
         }
     }
-    in.close();
-
-    m = g.size();
-    int cost = 0;
-    vector<int> res;
-
-    sort(g.begin(), g.end());
-    p.emplace_back();
-    p.back().resize(n);
-    for (int i=0; i<n; ++i)
-        p.back()[i] = i;
-
-    int i = 0;
-    int j = 0;
-    while(true)
-    {
-        if(i == g.size())
-        {
-            if(res.empty())
-                break;
-            cost -= g[res.back()].first;
-            i = res.back() + 1;
-            res.pop_back();
-            dsu_pop_back();
+    for(int i = 0; i < v.size(); i++ ){
+        if(v_in_r[i])
             continue;
-        }
-        int a = g[i].second.first,  b = g[i].second.second,  c = g[i].first;
-        if (dsu_get(a) != dsu_get(b))
-        {
-            cost += c;
-            res.push_back(i);
-            dsu_unite (a, b);
-            if(res.size() == n-1)
-            {
-                j++;
-                int dim = diam(g, res, n);
-                if (j % 50000 == 0) {
-                    cout << dim << endl;
-                    j = 0;
-                }
-                if(dim <= d )
-                    break;
-                else
-                {
-                    cost -= c;
-                    i = res.back();
-                    res.pop_back();
-                    dsu_pop_back();
-                }
+        int cost_min = dist(v[i], v[v_center]);
+        int v_min = v_center;
+        for(int j = 0; j < v.size(); j++){
+            if(!v_in_r[j] || i == j)
+                continue;
+            if(cost_min > dist(v[i], v[j])){
+                cost_min = dist(v[i], v[j]);
+                v_min = j;
             }
         }
-        i++;
+        result_cost_v_v.emplace_back();
+        result_cost_v_v.back().first = cost_min;
+        result_cost_v_v.back().second.first = i;
+        result_cost_v_v.back().second.second = v_min;
+    }
+
+    int all_cost = 0;
+    for(auto i : result_cost_v_v){
+        all_cost += i.first;
     }
 
     fstream result;
     result.open("../result_100.txt");
-    result << "c Вес дерева = " << cost << ", диаметр = " << d << ',' << endl;
+    result << "c Вес дерева = " << all_cost << ", диаметр = " << 4 << ',' << endl;
     result << "c число вершин и ребер" << endl;
-    result << "p edge " << n << ' ' << res.size() << endl;
-    result << "c ребера" << endl;
-    for(int i = 0; i < res.size(); i++){
-        result << "e " << g[i].second.first << ' ' << g[i].second.second << endl;
+    result << "p edge " << n << ' ' << result_cost_v_v.size() << endl;
+    result << "c ребра" << endl;
+    for (auto &i : result_cost_v_v) {
+        result << "e " << i.second.first+1 << ' ' << i.second.second+1 << endl;
     }
 
     return 0;
